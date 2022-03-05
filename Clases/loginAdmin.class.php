@@ -19,19 +19,19 @@ class loginAdmin extends conexion{
                 //Validacion longitud password
                 if(strlen($password)>=6 && strlen($password)<= 16) {
                     $password = parent::encriptar($password);
-                    $datos = $this->obtenerDatosUsuario($usuario);
-                    if($datos){
+                    $datosUsuario = $this->obtenerDatosUsuario($usuario);
+                    if($datosUsuario){
                         //verificar si la contraseña es igual
-                            if($password == $datos['password']){
+                            if($password == $datosUsuario['password']){
                                 //verificar estado del usuario
-                                    if($datos['estado'] == 1){                                       
+                                    if($datosUsuario['estado'] == 1){                                       
                                         //crear el token
-                                        $verificar  = $this->insertarToken($datos['usuarioID']);
-                                        if($verificar){
+                                        $token  = $this->insertarToken($datosUsuario['usuarioID']);
+                                        if($token){
                                                 // si se guardo
                                                 $result = $_respustas->response;
                                                 $result["result"] = array(
-                                                    "token" => $verificar
+                                                    "token" => $token
                                                 );
                                                 return $result;
                                         }else{
