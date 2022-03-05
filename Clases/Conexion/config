@@ -3,7 +3,7 @@
         "server" : "localhost",
         "user" : "root",
         "password" : "mora2000",
-        "database" : "listasprecios",
+        "database" : "gestionbares",
         "port": "3306"
     }
 }
