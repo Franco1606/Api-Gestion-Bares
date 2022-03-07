@@ -53,7 +53,7 @@ class conexion {
 
     public function obtenerDato($sqlstr){
         $result = $this->conexion->query($sqlstr);        
-        return $this->convertirUTF8($result);
+        return $this->convertirUTF8($result[0]);
     }
 
     public function obtenerImagen($sqlstr){
