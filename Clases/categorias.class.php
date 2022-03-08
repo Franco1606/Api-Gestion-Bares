@@ -59,6 +59,45 @@ class categorias extends conexion {
         }
     }
 
+    public function put($postBody) {
+        $_respuestas = new respuestas;
+        $_token = new token;        
+        $datos = json_decode($postBody, true);
+        $verificarToken = $_token->verificarToken($datos);
+        if($verificarToken == 1){
+            if(!isset($datos["nombre"]) || !isset($datos["categoriaID"])){
+                return $_respuestas->error_400();
+            } else {
+                $this->nombre = $datos["nombre"];
+                $this->categoriaID = $datos["categoriaID"];                
+                $resp = $this->modificarCategoria();                               
+                if($resp) {                    
+                    $respuesta = $_respuestas->response;
+                    $respuesta["result"] = array(
+                        "status" => "ok",                         
+                        "categoriaID" => $this->categoriaID
+                    );
+                    return $respuesta;
+                } else {
+                    return $_respuestas->error_500("Error interno del servidor, el cambio no se guardo o no hubo modificaciones en el registro");
+                }
+            }
+
+        } else {
+            return $verificarToken;
+        }
+    }
+
+    private function modificarCategoria(){
+        $query = "UPDATE " . $this->tabla . " SET nombre ='" . $this->nombre ."' WHERE categoriaID = '" . $this->categoriaID . "'"; 
+        $resp = parent::nonQuery($query);       
+        if($resp >= 1){
+             return $resp;
+        }else{
+            return 0;
+        }
+    }
+
     public function delete($postBody){
         $_respuestas = new respuestas;
         $_token = new token;        
