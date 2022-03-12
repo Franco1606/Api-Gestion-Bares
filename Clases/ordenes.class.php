@@ -58,19 +58,14 @@ class ordenes extends conexion {
             $this->estado = $datos['estado'];
             $this->solicitante = $datos['solicitante'];
             $this->pedidos = $datos['pedidos'];
+            $this->mesaID = $datos['mesaID'];
+            $this->domicilio = $datos['domicilio'];
 
             //Caracteres para generar codigo aleatorio
             $permitted_chars = 'ABCDE0123456789';
             $this->numOrden = substr(str_shuffle($permitted_chars), 0, 10);
 
-            if(isset($datos['mesaID'])) {
-                $this->mesaID = $datos['mesaID'];
-            }
-            if(isset($datos['domicilio'])) {
-                $this->domicilio = $datos['domicilio'];
-            }            
-
-            if($this->mesaID != null) {                
+            if($this->mesaID != 0) {                
                 $this->campoLugar = "mesaID";
                 $this->lugar = $datos['mesaID'];                
                 $sesion = $this->obtenerSesionAbierta();                
@@ -79,7 +74,7 @@ class ordenes extends conexion {
                 } else {
                     $this->insertarSesion("solicitada");                   
                 }                
-            } else if ($this->domicilio != null ) {
+            } else {
                 $this->campoLugar = "domicilio";
                 $this->lugar = $datos['domicilio'];
                 $this->sesionID = 0;                
