@@ -19,7 +19,7 @@ class sesiones extends conexion {
 
     public function obtenerSesiones($usuarioID) {
         $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "'";        
-        $datosSesiones = parent::obtenerDatos($query);        
+        $datosSesiones = parent::obtenerDatos($query);
         if($datosSesiones) {
             return $datosSesiones;
         } else {
@@ -48,22 +48,7 @@ class sesiones extends conexion {
             $this->usuarioID = $datos['usuarioID'];
             $this->mesaID = $datos['mesaID'];
             $this->fechaActual = date("Y-m-d H:i:s");
-            $this->estado = $datos['estado'];
-            /* if(isset($datos['mozoID'])) {
-                $this->mozoID = $datos['mozoID'];
-            }
-            if(isset($datos['abiertaFecha'])) {
-                $this->abiertaFecha = $datos['abiertaFecha'];
-            }
-            if(isset($datos['cerradaFecha'])) {
-                $this->cerradaFecha = $datos['cerradaFecha'];
-            }
-            if(isset($datos['ordenNueva'])) {
-                $this->ordenNueva = $datos['ordenNueva'];
-            }
-            if(isset($datos['ordenLista'])) {
-                $this->ordenLista = $datos['ordenLista'];
-            } */
+            $this->estado = $datos['estado'];            
             $resp = $this->insertarSesion();
             if($resp){                
                 $respuesta = $_respuestas->response;
