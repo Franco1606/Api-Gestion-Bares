@@ -23,9 +23,7 @@ class ordenes extends conexion {
     private $campoLugar;
     private $lugar;
     private $numOrden;
-
-    //Columnas de la tabla de Sesiones
-
+    private $pedidos;
 
     public function obtenerOrdenes($usuarioID, $sesionID) {
         $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND sesionID = '" . $sesionID . "'";        
@@ -59,6 +57,7 @@ class ordenes extends conexion {
             $this->fechaActual = date("Y-m-d H:i:s");
             $this->estado = $datos['estado'];
             $this->solicitante = $datos['solicitante'];
+            $this->pedidos = $datos['pedidos'];
 
             //Caracteres para generar codigo aleatorio
             $permitted_chars = 'ABCDE0123456789';
@@ -69,12 +68,12 @@ class ordenes extends conexion {
             }
             if(isset($datos['domicilio'])) {
                 $this->domicilio = $datos['domicilio'];
-            }
+            }            
 
             if($this->mesaID != null) {                
                 $this->campoLugar = "mesaID";
-                $this->lugar = $datos['mesaID'];
-                $sesion = $this->obtenerSesionAbierta();
+                $this->lugar = $datos['mesaID'];                
+                $sesion = $this->obtenerSesionAbierta();                
                 if($sesion) {
                     $this->sesionID = $sesion["sesionID"];                    
                 } else {
@@ -83,10 +82,12 @@ class ordenes extends conexion {
             } else if ($this->domicilio != null ) {
                 $this->campoLugar = "domicilio";
                 $this->lugar = $datos['domicilio'];
-                $this->sesionID = 0;
-            }           
+                $this->sesionID = 0;                
+            }          
 
             $resp = $this->insertarOrden();
+            $this->ordenID = $resp;            
+            $this->insertarPedidos();
             if($resp){                
                 $respuesta = $_respuestas->response;
                 $respuesta["result"] = array(
@@ -102,7 +103,7 @@ class ordenes extends conexion {
     }
 
     private function obtenerSesionAbierta() {
-        $query = "SELECT * FROM sesiones WHERE usuarioID = '" . $this->usuarioID . "' AND mesaID = '" . $this->lugar . "' AND estado = 'abierta' OR estado = 'solicitada'";
+        $query = "SELECT * FROM sesiones WHERE usuarioID = '" . $this->usuarioID . "' AND mesaID = '" . $this->mesaID . "' AND (estado = 'abierta' OR estado = 'solicitada')";               
         $datosSesiones = parent::obtenerDatos($query);        
         if($datosSesiones) {
             return $datosSesiones[0];
@@ -123,6 +124,24 @@ class ordenes extends conexion {
              return $resp;
         }else{
             return 0;
+        }
+    }
+
+    private function insertarPedidos() {        
+        foreach($this->pedidos as $pedido) {
+            $productoID = $pedido["productoID"];
+            $cantidad = $pedido["cantidad"];
+            $nombre = $pedido["nombre"];
+            $precio = $pedido["precio"];
+            if(isset($pedido["comentario"])) {
+                $comentario = $pedido["comentario"];
+            } else {
+                $comentario = null;
+            }
+
+            $query = "INSERT INTO pedidos (ordenID, productoID, usuarioID, sesionID, cantidad, nombre, comentario, precio, cocina) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "',0 )";
+            parent::nonQueryId($query);
+            
         }
     }
 }
