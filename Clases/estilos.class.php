@@ -60,18 +60,25 @@ class estilos extends conexion {
     }
 
     //Insertar o Modificar de estilo 
-    private function insertarOModificarEstilo() {         
+    private function insertarOModificarEstilo() {
+        $verif = true;         
         foreach($this->estilos as $estilo) {            
             $this->nombre = $estilo["nombre"];
             $this->valor = $estilo["valor"];
             $verificarExistencia = $this->obtenerEstiloPorNombre();
             if($verificarExistencia) {
                 $resp = $this->modificarEstilo();
+                if(!$resp){
+                    $verif = false;
+                }
             } else {
                 $resp = $this->insertarEstilo();
+                if(!$resp) {
+                    $verif = false;
+                }
             }
         }        
-        return $resp;
+        return $verif;
     }
 
     private function insertarEstilo(){
