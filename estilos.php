@@ -6,15 +6,16 @@ $estilos = new estilos;
 $_respuestas = new respuestas;
 
 if($_SERVER["REQUEST_METHOD"] == "GET") {
-    if(isset($_GET["usuarioID"])) {
+    if(isset($_GET["usuarioID"]) && isset($_GET["nombre"])) {
+        $usuarioID = $_GET["usuarioID"];
+        $nombre = $_GET["nombre"];
+        $datos = $estilos->obtenerEstiloPorNombre($usuarioID, $nombre);        
+    } else if(isset($_GET["usuarioID"])) {
         $usuarioID = $_GET["usuarioID"];        
-        $datosestilos = $estilos->obtenerEstilos($usuarioID);
-    } else if(isset($_GET["estiloID"])) {
-        $estiloID = $_GET["estiloID"];
-        $datosestilos = $estilos->obtenerEstilo($estiloID);
+        $datos = $estilos->obtenerEstilos($usuarioID);
     }
     header("Content-Type: application/json");
-    echo json_encode($datosestilos);
+    echo json_encode($datos);
     http_response_code(200);
 
 } else if($_SERVER["REQUEST_METHOD"] == "POST") {
