@@ -9,6 +9,7 @@ class categorias extends conexion {
     private $categoriaID;
     private $nombre;
     private $comentario;
+    private $mitad;
     private $usuarioID;   
 
     public function obtenerCategorias($usuarioID) {
@@ -66,11 +67,12 @@ class categorias extends conexion {
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);
         if($verificarToken == 1){
-            if(!isset($datos["nombre"]) || !isset($datos["comentario"]) || !isset($datos["categoriaID"])){
+            if(!isset($datos["nombre"]) || !isset($datos["comentario"]) || !isset($datos["mitad"]) || !isset($datos["categoriaID"])){
                 return $_respuestas->error_400();
             } else {
                 $this->nombre = $datos["nombre"];
                 $this->comentario = $datos["comentario"];
+                $this->mitad = $datos["mitad"];
                 $this->categoriaID = $datos["categoriaID"];
                 $resp = $this->modificarCategoria();                               
                 if($resp) {                    
@@ -91,7 +93,7 @@ class categorias extends conexion {
     }
 
     private function modificarCategoria(){
-        $query = "UPDATE " . $this->tabla . " SET nombre ='" . $this->nombre ."', comentario = '" . $this->comentario . "' WHERE categoriaID = '" . $this->categoriaID . "'";         
+        $query = "UPDATE " . $this->tabla . " SET nombre ='" . $this->nombre . "', comentario = '" . $this->comentario . "', mitad = '" . $this->mitad . "' WHERE categoriaID = '" . $this->categoriaID . "'";         
         $resp = parent::nonQuery($query);       
         if($resp >= 1){
              return $resp;
