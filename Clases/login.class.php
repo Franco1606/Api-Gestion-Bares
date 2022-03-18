@@ -28,7 +28,7 @@ class login extends conexion{
                 //Validacion longitud password
                 if(strlen($password)>=6 && strlen($password)<= 16) {
                     $password = parent::encriptar($password);                                       
-                    $datosUsuario = $this->obtenerDatosUsuario($datos);                                    
+                    $datosUsuario = $this->obtenerDatosUsuario($datos);                    
                     if($datosUsuario){
                         //verificar si la contraseña es igual
                             if($password == $datosUsuario['password']){
@@ -89,24 +89,24 @@ class login extends conexion{
     }
 
     private function insertarToken($datosUsuario){
-        if(isset($datosUsuario["usuarioID"])) {
-            $table = "usuarios_token";
-            $ID = $datosUsuario["usuarioID"];
-            $campoUsuario = "usuarioID";
-        } else if (isset($datosUsuario["mozoID"])) {
+        if(isset($datosUsuario["mozoID"])) {
             $table = "mozos_token";
             $ID = $datosUsuario["mozoID"];
             $campoUsuario = "mozoID";
-        } else if(isset($datosUsuario["cocineroID"])) {
+        } else if (isset($datosUsuario["cocineroID"])) {
             $table = "cocineros_token";
             $ID = $datosUsuario["cocineroID"];
             $campoUsuario = "cocineroID";
+        } else if(isset($datosUsuario["usuarioID"])) {
+            $table = "usuarios_token";
+            $ID = $datosUsuario["usuarioID"];
+            $campoUsuario = "usuarioID";
         }
         $val = true;
         $token = bin2hex(openssl_random_pseudo_bytes(16,$val));
         $tiempo = time();
         $estado = 1;
-        $query = "INSERT INTO " . $table . " (" . $campoUsuario . ",token,estado,tiempo)VALUES('$ID','$token','$estado','$tiempo')";                      
+        $query = "INSERT INTO " . $table . " (" . $campoUsuario . ",token,estado,tiempo)VALUES('$ID','$token','$estado','$tiempo')";                             
         $verifica = parent::nonQuery($query);
         if($verifica){
             return $token;
