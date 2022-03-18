@@ -21,7 +21,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
     }else{
         http_response_code(200);
     }
-    echo json_encode($response);    
+    echo json_encode($response);
 
 }else{
     header('Content-Type: application/json');
