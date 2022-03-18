@@ -67,34 +67,35 @@ class ordenes extends conexion {
 
             if($this->mesaID != 0) {                
                 $this->campoLugar = "mesaID";
-                $this->lugar = $datos['mesaID'];                
-                $sesion = $this->obtenerSesionAbierta();                
+                $this->lugar = $datos['mesaID'];
+                $sesion = $this->obtenerSesionAbierta();
                 if($sesion) {
-                    $this->sesionID = $sesion["sesionID"];                    
+                    $this->sesionID = $sesion["sesionID"];
                 } else {
-                    $this->insertarSesion("solicitada");                   
-                }                
+                    $this->insertarSesion("solicitada");
+                }
             } else {
                 $this->campoLugar = "domicilio";
                 $this->lugar = $datos['domicilio'];
-                $this->sesionID = 0;                
-            }          
+                $this->sesionID = 0;
+            }
 
             $resp = $this->insertarOrden();
-            $this->ordenID = $resp;            
-            $this->insertarPedidos();
-            if($resp){                
+            $this->ordenID = $resp;
+            $happy = $this->insertarPedidos();            
+            if($resp){
                 $respuesta = $_respuestas->response;
                 $respuesta["result"] = array(
                     "ordenID" => $resp,
                     "nuevaFecha" => $this->fechaActual,
-                    "numOrden" => $this->numOrden
+                    "numOrden" => $this->numOrden,
+                    "happy" => $happy
                 );
                 return $respuesta;
             }else{
                 return $_respuestas->error_500();
             }
-        }       
+        }
     }
 
     private function obtenerSesionAbierta() {
@@ -122,9 +123,12 @@ class ordenes extends conexion {
         }
     }
 
-    private function insertarPedidos() {        
+    private function insertarPedidos() {
+        $happy = 0;
         foreach($this->pedidos as $pedido) {
             $productoID = $pedido["productoID"];
+            $categoriaID = $pedido["categoriaID"];            
+            $happy = $this->verificarHappy($categoriaID);
             $cantidad = $pedido["cantidad"];
             $nombre = $pedido["nombre"];
             $precio = $pedido["precio"];
@@ -133,10 +137,45 @@ class ordenes extends conexion {
             } else {
                 $comentario = null;
             }
+            $query = "INSERT INTO pedidos (ordenID, productoID, categoriaID, usuarioID, sesionID, cantidad, nombre, comentario, precio, happy, cocina) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $categoriaID . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "','" . $happy . "',0 )";
+            parent::nonQueryId($query);            
+        }
+        return $happy;
+    }
 
-            $query = "INSERT INTO pedidos (ordenID, productoID, usuarioID, sesionID, cantidad, nombre, comentario, precio, cocina) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "',0 )";
-            parent::nonQueryId($query);
-            
+    private function verificarHappy($categoriaID) {
+        $query = "SELECT * FROM happy WHERE usuarioID = '" . $this->usuarioID . "' AND categoriaID = '" . $categoriaID . "'";                
+        $datoshappy = parent::obtenerDatos($query);
+        if($datoshappy) {
+            $lunes = $datoshappy[0]["lunes"];
+            $martes = $datoshappy[0]["martes"];
+            $miercoles = $datoshappy[0]["miercoles"];
+            $jueves = $datoshappy[0]["jueves"];
+            $viernes = $datoshappy[0]["viernes"];
+            $sabado = $datoshappy[0]["sabado"];
+            $domingo = $datoshappy[0]["domingo"];
+            $inicio = $datoshappy[0]["inicio"];
+            $fin = $datoshappy[0]["fin"];
+            $horaActual = date("G:i");
+            $diaActual = date("N");
+            if($diaActual == $lunes || $diaActual == $martes || $diaActual == $miercoles || $diaActual == $jueves || $diaActual == $viernes || $diaActual == $sabado || $diaActual == $domingo) {                                                
+                return $this->estaEnRango($inicio, $fin, $horaActual);                
+            } else {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    private function estaEnRango($inicio, $fin, $horaActual) {        
+        $fechaDesde = DateTime::createFromFormat('G:i', $inicio);
+        $fechaHasta = DateTime::createFromFormat('G:i', $fin);
+        $fechaActual = DateTime::createFromFormat('G:i', $horaActual);
+        if($fechaDesde <= $fechaActual && $fechaActual <= $fechaHasta) {
+            return 1;
+        } else {
+            return 0;
         }
     }
 }
