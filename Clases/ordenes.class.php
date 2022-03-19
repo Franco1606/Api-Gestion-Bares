@@ -25,9 +25,10 @@ class ordenes extends conexion {
     private $lugar;
     private $numOrden;
     private $pedidos;
+    private $mozoID;
 
-    public function obtenerOrdenes($usuarioID, $sesionID) {
-        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND sesionID = '" . $sesionID . "'";        
+    public function obtenerOrdenes($sesionID) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE sesionID = '" . $sesionID . "'";        
         $datosProudctos = parent::obtenerDatos($query);        
         if($datosProudctos) {
             return $datosProudctos;
@@ -83,6 +84,9 @@ class ordenes extends conexion {
             }
 
             $resp = $this->insertarOrden();
+            if($this->estado == "nueva" && $resp) {
+                $this->AgregarAvisoOrdenNueva();
+            }
             $this->ordenID = $resp;
             $happy = $this->insertarPedidos();            
             if($resp){
@@ -124,6 +128,11 @@ class ordenes extends conexion {
             return 0;
         }
     }
+
+    private function AgregarAvisoOrdenNueva() {
+        $query = "UPDATE sesiones SET ordenNueva = 1 WHERE sesionID = '" . $this->sesionID . "'"; 
+        parent::nonQuery($query);
+    }    
 
     private function insertarPedidos() {
         $happy = 0;
@@ -193,11 +202,20 @@ class ordenes extends conexion {
             } else {
                 $this->estado = $datos["estado"];
                 $this->ordenID = $datos["ordenID"];
-                if($this->estado == "activa") {
-                    $resp = $this->cambiarActiva();
-                } else if ($this->estado == "finalizada") {
-                    $resp = $this->cambiarFinalizada();
+                if(isset($datos['sesionID'])) {
+                    $this->sesionID = $datos["sesionID"];
                 }
+                if(isset($datos['mozoID'])) {
+                    $this->mozoID = $datos["mozoID"];
+                }
+                if($this->estado == "activa") {
+                    $resp = $this->cambiarOrdenActiva();
+                    $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
+                    
+                } else if ($this->estado == "finalizada") {
+                    $resp = $this->cambiarOrdenFinalizada();
+                }
+                $this->quitarAvisoOrdenNueva();
                 if($resp) {                    
                     $respuesta = $_respuestas->response;
                     $respuesta["result"] = array(
@@ -215,7 +233,21 @@ class ordenes extends conexion {
         }
     }
 
-    private function cambiarActiva(){
+    private function quitarAvisoOrdenNueva() {        
+        $ordenesDeLaSesion = $this->obtenerOrdenes($this->sesionID);
+        $ordenesNuevas = false;
+        foreach($ordenesDeLaSesion as $orden) {
+            if($orden["estado"] == "nueva") {
+                $ordenesNuevas = true;
+            }
+        }        
+        if(!$ordenesNuevas) {            
+            $query = "UPDATE sesiones SET ordenNueva = 0 WHERE sesionID = '" . $this->sesionID . "'";
+            parent::nonQuery($query);
+        } 
+    }
+
+    private function cambiarOrdenActiva(){
         $fechaActual = date("Y-m-d H:i:s");
         $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', activaFecha = '" . $fechaActual . "', listaFecha = NULL, finalizadaFecha = NULL WHERE ordenID = '" . $this->ordenID . "'";         
         $resp = parent::nonQuery($query);       
@@ -226,7 +258,7 @@ class ordenes extends conexion {
         }
     }
 
-    private function cambiarFinalizada(){
+    private function cambiarOrdenFinalizada(){
         $fechaActual = date("Y-m-d H:i:s");
         $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', finalizadaFecha = '" . $fechaActual . "' WHERE ordenID = '" . $this->ordenID . "'";         
         $resp = parent::nonQuery($query);       
@@ -237,7 +269,16 @@ class ordenes extends conexion {
         }
     }
 
-
+    private function cambiarMesaAbierta($mozoID, $sesionID) {
+        $fechaActual = date("Y-m-d H:i:s");
+        $query = "UPDATE sesiones SET estado = 'abierta', mozoID = '" . $mozoID . "', abiertaFecha = '" . $fechaActual . "' WHERE sesionID = '" . $sesionID . "'";         
+        $resp = parent::nonQuery($query);       
+        if($resp >= 1){
+             return $resp;
+        }else{
+            return 0;
+        }
+    }
 }
 
 ?>
