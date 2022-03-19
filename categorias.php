@@ -7,9 +7,13 @@ $_respuestas = new respuestas;
 
 if($_SERVER["REQUEST_METHOD"] == "GET") {    
     if(isset($_GET["usuarioID"])) {
-        $usuarioID = $_GET["usuarioID"];       
-    }   
-    $datosCategorias = $_categorias->obtenerCategorias($usuarioID);       
+        $usuarioID = $_GET["usuarioID"];
+        $datosCategorias = $_categorias->obtenerCategorias($usuarioID);
+    } else if(isset($_GET["categoriaID"])) {
+        $categoriaID = $_GET["categoriaID"];
+        $datosCategorias = $_categorias->obtenerCategoria($categoriaID);
+    }  
+           
     header("Content-Type: application/json");
     echo json_encode($datosCategorias);
     http_response_code(200);
