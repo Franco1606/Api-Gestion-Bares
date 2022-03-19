@@ -22,6 +22,16 @@ class categorias extends conexion {
         }
     }
 
+    public function obtenerCategoria($categoriaID) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE categoriaID = '" . $categoriaID . "'";        
+        $datosCategorias = parent::obtenerDatos($query);        
+        if($datosCategorias) {
+            return $datosCategorias[0];
+        } else {
+            return 0;
+        }
+    }
+
     public function post($postBody) {
         $_respuestas = new respuestas;
         $_token = new token;        
