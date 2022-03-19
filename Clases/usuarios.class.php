@@ -30,7 +30,7 @@ class usuarios extends conexion {
                 break;
             }         
                 
-            $query = "SELECT usuario," . $campoUsuario . " from " . $tabla . " WHERE " . $campoUsuario . " = '" . $ID . "'";        
+            $query = "SELECT * from " . $tabla . " WHERE " . $campoUsuario . " = '" . $ID . "'";        
             $datosUsuario = parent::obtenerDatos($query);
             if($datosUsuario){
                 return $datosUsuario[0];
