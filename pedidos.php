@@ -17,6 +17,21 @@ if($_SERVER["REQUEST_METHOD"] == "GET") {
     echo json_encode($datosPedidos);
     http_response_code(200);
 
+} else if($_SERVER['REQUEST_METHOD'] == "PUT"){
+    //Recibir de datos
+    $postBody = file_get_contents("php://input");
+    //Envio de datos al manejador
+    $respuesta = $_pedidos->put($postBody);
+    //Respuesta 
+    header('Content-Type: application/json');
+    if(isset($respuesta["result"]["error_id"])){
+        $responseCode = $respuesta["result"]["error_id"];
+        http_response_code($responseCode);
+    }else{
+        http_response_code(200);
+    }
+    echo json_encode($respuesta);
+
 } else {    
     header("Content-Type: application/json");
     $respuesta = $_respuestas->error_405();
