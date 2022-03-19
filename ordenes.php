@@ -6,10 +6,9 @@ $ordenes = new ordenes;
 $_respuestas = new respuestas;
 
 if($_SERVER["REQUEST_METHOD"] == "GET") {
-    if(isset($_GET["usuarioID"]) && isset($_GET["sesionID"])) {
-        $usuarioID = $_GET["usuarioID"];
+    if(isset($_GET["sesionID"])) {
         $sesionID = $_GET["sesionID"];
-        $datosordenes = $ordenes->obtenerOrdenes($usuarioID, $sesionID);
+        $datosordenes = $ordenes->obtenerOrdenes($sesionID);
     } else if(isset($_GET["ordenID"])) {
         $ordenID = $_GET["ordenID"];
         $datosordenes = $ordenes->obtenerOrden($ordenID);
