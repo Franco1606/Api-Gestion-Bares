@@ -19,6 +19,7 @@ class ordenes extends conexion {
     private $solicitante;
     private $domicilio;
     private $mesaID;
+    private $total;
     //Atributos de uso local
     private $campoLugar;
     private $lugar;
@@ -36,7 +37,7 @@ class ordenes extends conexion {
     }
 
     public function obtenerOrden($ordenID) {
-        $query = "SELECT * FROM " . $this->tabla . " WHERE sesionID = '" . $ordenID . "'";
+        $query = "SELECT * FROM " . $this->tabla . " WHERE ordenID = '" . $ordenID . "'";
         $datosProudctos = parent::obtenerDatos($query);
         if($datosProudctos) {
             return $datosProudctos[0];
@@ -50,12 +51,13 @@ class ordenes extends conexion {
         $_respuestas = new respuestas;
         $_token = new token;
         $datos = json_decode($postBody, true);               
-        if(!isset($datos['usuarioID']) || !isset($datos['estado']) || !isset($datos['solicitante']) || !(isset($datos['mesaID']) || isset($datos['domicilio']))){
+        if(!isset($datos['usuarioID']) || !isset($datos['estado']) || !isset($datos['solicitante']) || !isset($datos['total']) || !(isset($datos['mesaID']) || isset($datos['domicilio']))){
             return $_respuestas->error_400();
         }else{                  
             $this->usuarioID = $datos['usuarioID'];
             $this->fechaActual = date("Y-m-d H:i:s");
             $this->estado = $datos['estado'];
+            $this->total = $datos['total'];
             $this->solicitante = $datos['solicitante'];
             $this->pedidos = $datos['pedidos'];
             $this->mesaID = $datos['mesaID'];
@@ -114,7 +116,7 @@ class ordenes extends conexion {
     }
 
     private function insertarOrden(){
-        $query = "INSERT INTO " . $this->tabla . " (usuarioID, nuevaFecha, estado, solicitante, numOrden, sesionID, " . $this->campoLugar . ") values ('" . $this->usuarioID . "','" . $this->fechaActual ."','" . $this->estado . "','" . $this->solicitante . "','" . $this->numOrden . "','" . $this->sesionID . "','" . $this->lugar . "')";        
+        $query = "INSERT INTO " . $this->tabla . " (usuarioID, nuevaFecha, estado, total, solicitante, numOrden, sesionID, " . $this->campoLugar . ") values ('" . $this->usuarioID . "','" . $this->fechaActual . "','" . $this->estado . "','" . $this->total . "','" . $this->solicitante . "','" . $this->numOrden . "','" . $this->sesionID . "','" . $this->lugar . "')";        
         $resp = parent::nonQueryId($query);
         if($resp){
              return $resp;
@@ -127,7 +129,8 @@ class ordenes extends conexion {
         $happy = 0;
         foreach($this->pedidos as $pedido) {
             $productoID = $pedido["productoID"];
-            $categoriaID = $pedido["categoriaID"];            
+            $categoriaID = $pedido["categoriaID"];
+            $categoriaNombre = $pedido["categoriaNombre"];
             $happy = $this->verificarHappy($categoriaID);
             $cantidad = $pedido["cantidad"];
             $nombre = $pedido["nombre"];
@@ -137,7 +140,7 @@ class ordenes extends conexion {
             } else {
                 $comentario = null;
             }
-            $query = "INSERT INTO pedidos (ordenID, productoID, categoriaID, usuarioID, sesionID, cantidad, nombre, comentario, precio, happy, cocina) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $categoriaID . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "','" . $happy . "',0 )";
+            $query = "INSERT INTO pedidos (ordenID, productoID, categoriaID, categoriaNombre, usuarioID, sesionID, cantidad, nombre, comentario, precio, happy, cocina) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $categoriaID . "','" . $categoriaNombre . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "','" . $happy . "',0 )";
             parent::nonQueryId($query);            
         }
         return $happy;
@@ -178,6 +181,63 @@ class ordenes extends conexion {
             return 0;
         }
     }
+
+    public function put($postBody) {
+        $_respuestas = new respuestas;
+        $_token = new token;        
+        $datos = json_decode($postBody, true);
+        $verificarToken = $_token->verificarToken($datos);
+        if($verificarToken == 1){
+            if(!isset($datos["estado"]) || !isset($datos["ordenID"])){
+                return $_respuestas->error_400();
+            } else {
+                $this->estado = $datos["estado"];
+                $this->ordenID = $datos["ordenID"];
+                if($this->estado == "activa") {
+                    $resp = $this->cambiarActiva();
+                } else if ($this->estado == "finalizada") {
+                    $resp = $this->cambiarFinalizada();
+                }
+                if($resp) {                    
+                    $respuesta = $_respuestas->response;
+                    $respuesta["result"] = array(
+                        "status" => "ok",                         
+                        "ordenID" => $this->ordenID
+                    );
+                    return $respuesta;
+                } else {
+                    return $_respuestas->error_500("Error interno del servidor, el cambio no se guardo o no hubo modificaciones en el registro");
+                }
+            }
+
+        } else {
+            return $verificarToken;
+        }
+    }
+
+    private function cambiarActiva(){
+        $fechaActual = date("Y-m-d H:i:s");
+        $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', activaFecha = '" . $fechaActual . "', listaFecha = NULL, finalizadaFecha = NULL WHERE ordenID = '" . $this->ordenID . "'";         
+        $resp = parent::nonQuery($query);       
+        if($resp >= 1){
+             return $resp;
+        }else{
+            return 0;
+        }
+    }
+
+    private function cambiarFinalizada(){
+        $fechaActual = date("Y-m-d H:i:s");
+        $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', finalizadaFecha = '" . $fechaActual . "' WHERE ordenID = '" . $this->ordenID . "'";         
+        $resp = parent::nonQuery($query);       
+        if($resp >= 1){
+             return $resp;
+        }else{
+            return 0;
+        }
+    }
+
+
 }
 
 ?>
