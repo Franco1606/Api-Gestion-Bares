@@ -12,7 +12,8 @@ class productos extends conexion {
     private $precio;
     private $mostrar;
     private $usuarioID;
-    private $categoriaID;       
+    private $categoriaID; 
+    private $categoriaNombre;       
 
     public function obtenerProductos($usuarioID, $categoriaID) {
         $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND categoriaID = '" . $categoriaID . "'";        
@@ -40,7 +41,7 @@ class productos extends conexion {
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);        
         if($verificarToken == 1) {                       
-            if(!isset($datos['nombre']) || !isset($datos['precio']) || !isset($datos['usuarioID']) || !isset($datos['categoriaID'])){
+            if(!isset($datos['nombre']) || !isset($datos['precio']) || !isset($datos['usuarioID']) || !isset($datos['categoriaID']) || !isset($datos['categoriaNombre'])){
                 return $_respuestas->error_400();
             }else{
                 $this->nombre = $datos['nombre'];
@@ -51,6 +52,7 @@ class productos extends conexion {
                 $this->mostrar = 1;
                 $this->usuarioID = $datos['usuarioID'];
                 $this->categoriaID = $datos['categoriaID'];
+                $this->categoriaNombre = $datos['categoriaNombre'];
                 $resp = $this->insertarProdcuto();
                 if($resp){                
                     $respuesta = $_respuestas->response;
@@ -69,7 +71,7 @@ class productos extends conexion {
     }
 
     private function insertarProdcuto(){
-        $query = "INSERT INTO " . $this->tabla . " (nombre, descripcion, precio, mostrar, usuarioID, categoriaID) values ('" . $this->nombre . "','" . $this->descripcion ."','" . $this->precio . "',1 ,'" . $this->usuarioID . "','" . $this->categoriaID . "')";        
+        $query = "INSERT INTO " . $this->tabla . " (nombre, descripcion, precio, mostrar, usuarioID, categoriaID, categoriaNombre) values ('" . $this->nombre . "','" . $this->descripcion ."','" . $this->precio . "',1 ,'" . $this->usuarioID . "','" . $this->categoriaID . "','" . $this->categoriaNombre . "')";        
         $resp = parent::nonQueryId($query);
         if($resp){
              return $resp;
