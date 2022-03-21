@@ -19,6 +19,8 @@ class pedidos extends conexion {
     private $precio;
     private $cocina;
     private $comentario;
+    //otras variables
+    private $pedidoEnCocina = false;
 
     public function obtenerPedidos($ordenID) {
         $query = "SELECT * FROM " . $this->tabla . " WHERE ordenID = '" . $ordenID . "'";
@@ -40,14 +42,50 @@ class pedidos extends conexion {
         }
     }
 
+    public function obtenerPedidosEnCocina($usuarioID, $cocina) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND cocina = '" . $cocina . "'";
+        $datosProudctos = parent::obtenerDatos($query);        
+        if($datosProudctos) {
+            return $datosProudctos;
+        } else {
+            return 0;
+        }
+    }
+
+    public function obtenerPedidosPorUsuario($usuarioID) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "'";        
+        $datosProudctos = parent::obtenerDatos($query);        
+        if($datosProudctos) {
+            return $datosProudctos;
+        } else {
+            return 0;
+        }
+    }
+
+    public function obtenerPedidosPorProductoId($productoID, $cocina) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE productoID = '" . $productoID . "' AND cocina = '" . $cocina . "'";        
+        $datosProudctos = parent::obtenerDatos($query);        
+        if($datosProudctos) {
+            return $datosProudctos;
+        } else {
+            return 0;
+        }
+    }
+
     public function put($postBody) {        
         $_respuestas = new respuestas;
         $_token = new token;
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);
         if($verificarToken == 1) {
-            $arrayPedidos = $datos["pedido"];            
-            $resp = $this->enviarPedidosACocina($arrayPedidos);            
+            $arrayPedidos = $datos["pedido"];
+            $ordenID = $datos["ordenID"];
+            $resp = $this->enviarPedidosACocina($arrayPedidos);
+            if($this->pedidoEnCocina) {
+                $this->estadoOrdenCocina($ordenID, 1);
+            } else {
+                $this->estadoOrdenCocina($ordenID, 0);
+            }
             if($resp) {            
                 $respuesta = $_respuestas->response;
                 $respuesta["result"] = array(                
@@ -66,6 +104,9 @@ class pedidos extends conexion {
         $verificador = true;
         foreach($arrayPedidos as $pedido) {
             $this->cocina = $pedido['cocina'];
+            if($this->cocina) {
+                $this->pedidoEnCocina = true;
+            }
             $this->pedidoID = $pedido['pedidoID'];            
             $query = "UPDATE " . $this->tabla . " SET cocina = '" . $this->cocina ."' WHERE pedidoID = '" . $this->pedidoID . "'";
             $resp = parent::nonQueryUpdate($query);                          
@@ -74,6 +115,11 @@ class pedidos extends conexion {
             }
         }
         return $verificador;
+    }
+
+    private function estadoOrdenCocina($ordenID, $cocina) {
+        $query = "UPDATE ordenes SET cocina = " . $cocina . " WHERE ordenID = '" . $ordenID . "'";
+        $resp = parent::nonQueryUpdate($query);
     }
 
 
