@@ -12,7 +12,11 @@ if($_SERVER["REQUEST_METHOD"] == "GET") {
     } else if(isset($_GET["ordenID"])) {
         $ordenID = $_GET["ordenID"];
         $datosordenes = $ordenes->obtenerOrden($ordenID);
-    }
+    } else if(isset($_GET["usuarioID"]) && isset($_GET["cocina"])) {
+        $usuarioID = $_GET["usuarioID"];
+        $cocina = $_GET["cocina"];
+        $datosordenes = $ordenes->obtenerOrdenesPorUsuario($usuarioID, $cocina);
+    } 
     header("Content-Type: application/json");
     echo json_encode($datosordenes);
     http_response_code(200);
