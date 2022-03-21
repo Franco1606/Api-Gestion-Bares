@@ -16,6 +16,7 @@ class sesiones extends conexion {
     private $estado;
     private $ordenNueva;
     private $ordenLista;
+    private $llamarMozo;
 
     public function obtenerSesiones($usuarioID) {
         $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "'";        
@@ -57,7 +58,8 @@ class sesiones extends conexion {
         }
         $this->fechaActual = date("Y-m-d H:i:s");
 
-        if(isset($datos["llamarMozo"])) {            
+        if(isset($datos["llamarMozo"])) {
+            $this->llamarMozo = $datos["llamarMozo"];
             $datosSesion = $this->verificarSesionAbierta();                        
             if($datosSesion) {
                 $this->sesionID = $datosSesion["sesionID"];                
@@ -99,7 +101,7 @@ class sesiones extends conexion {
     }
 
     private function llamarMozo(){
-        $query = "UPDATE " . $this->tabla . " SET llamarMozo = 1 WHERE sesionID = '" . $this->sesionID . "'";                
+        $query = "UPDATE " . $this->tabla . " SET llamarMozo = '" . $this->llamarMozo . "' WHERE sesionID = '" . $this->sesionID . "'";                
         $resp = parent::nonQuery($query);       
         if($resp >= 1){
              return $resp;
