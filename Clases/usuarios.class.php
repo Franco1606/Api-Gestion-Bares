@@ -8,7 +8,7 @@ class usuarios extends conexion {
 
     public function obtenerUsuarioPorToken($tokenUsuario, $token){ 
         $_token = new token;
-        $array = array($tokenUsuario => $token);              
+        $array = array($tokenUsuario => $token);
         $verificarToken = $_token->verificarToken($array);        
         if($verificarToken == 1) {
             $datosToken = $this->buscarToken($tokenUsuario, $token);               
@@ -39,8 +39,7 @@ class usuarios extends conexion {
             }
         } else {
             return $verificarToken;
-        }              
-        
+        }        
     }    
 
     private function buscarToken($tokenUsuario, $token){
