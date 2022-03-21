@@ -6,9 +6,9 @@ class token extends conexion {
 
     private $tiempoSesion = 3600;
 
-    public function verificarToken($datos) {                 
+    public function verificarToken($datos) {                
         $_respuestas = new respuestas;         
-        if(!(isset($datos['tokenAdmin']) || isset($datos['tokenMozo'])) || isset($datos['tokenCocina'])){            
+        if(!(isset($datos['tokenAdmin']) || isset($datos['tokenMozo']) || isset($datos['tokenCocina']))){
             return $_respuestas->error_401();
 
         } else{            
@@ -53,7 +53,7 @@ class token extends conexion {
             $token = $datos['tokenCocina'];
             $tabla = 'cocineros_token';            
         }
-        $query = "SELECT * from " . $tabla . " WHERE token = '" . $token . "' AND estado = 1";                
+        $query = "SELECT * from " . $tabla . " WHERE token = '" . $token . "' AND estado = 1";                               
         $datosToken = parent::obtenerDatos($query);
         if($datosToken){
             return $datosToken[0];
