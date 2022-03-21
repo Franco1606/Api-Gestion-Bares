@@ -214,6 +214,7 @@ class ordenes extends conexion {
                     
                 } else if ($this->estado == "finalizada") {
                     $resp = $this->cambiarOrdenFinalizada();
+                    $this->quitarPedidosDeCocina();
                 }
                 $this->quitarAvisoOrdenNueva();
                 if($resp) {                    
@@ -261,7 +262,7 @@ class ordenes extends conexion {
     private function cambiarOrdenFinalizada(){
         $fechaActual = date("Y-m-d H:i:s");
         $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', finalizadaFecha = '" . $fechaActual . "' WHERE ordenID = '" . $this->ordenID . "'";         
-        $resp = parent::nonQuery($query);       
+        $resp = parent::nonQuery($query);
         if($resp >= 1){
              return $resp;
         }else{
@@ -276,6 +277,16 @@ class ordenes extends conexion {
         if($resp >= 1){
              return $resp;
         }else{
+            return 0;
+        }
+    }
+
+    private function quitarPedidosDeCocina(){        
+        $query = "UPDATE pedidos SET cocina = 0 WHERE ordenID = '" . $this->ordenID . "'";
+        $resp = parent::nonQueryUpdate($query);                          
+        if($resp){
+            return $resp;            
+        } else {
             return 0;
         }
     }
