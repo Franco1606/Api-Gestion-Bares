@@ -47,7 +47,7 @@ class pedidos extends conexion {
         $verificarToken = $_token->verificarToken($datos);
         if($verificarToken == 1) {
             $arrayPedidos = $datos["pedido"];            
-            $resp = $this->modificarPedidos($arrayPedidos);            
+            $resp = $this->enviarPedidosACocina($arrayPedidos);            
             if($resp) {            
                 $respuesta = $_respuestas->response;
                 $respuesta["result"] = array(                
@@ -62,7 +62,7 @@ class pedidos extends conexion {
         }
     }
 
-    private function modificarPedidos($arrayPedidos){                       
+    private function enviarPedidosACocina($arrayPedidos){                       
         $verificador = true;
         foreach($arrayPedidos as $pedido) {
             $this->cocina = $pedido['cocina'];
