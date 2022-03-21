@@ -37,6 +37,16 @@ class ordenes extends conexion {
         }
     }
 
+    public function obtenerOrdenesPorUsuario($usuarioID, $cocina) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND cocina = '" . $cocina . "'";        
+        $datosProudctos = parent::obtenerDatos($query);        
+        if($datosProudctos) {
+            return $datosProudctos;
+        } else {
+            return 0;
+        }
+    }
+
     public function obtenerOrden($ordenID) {
         $query = "SELECT * FROM " . $this->tabla . " WHERE ordenID = '" . $ordenID . "'";
         $datosProudctos = parent::obtenerDatos($query);
@@ -211,12 +221,19 @@ class ordenes extends conexion {
                 if($this->estado == "activa") {
                     $resp = $this->cambiarOrdenActiva();
                     $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
-                    
+                    $this->quitarAvisoOrdenNueva();
+                } else if ($this->estado == "lista") {
+                    $resp = $this->cambiarOrdenLista();
+                    $this->quitarPedidosDeCocina();
+                    $this->quitarOrdenDeCocina();
+                    $this->AgregarAvisoOrdenLista();
                 } else if ($this->estado == "finalizada") {
                     $resp = $this->cambiarOrdenFinalizada();
                     $this->quitarPedidosDeCocina();
+                    $this->quitarOrdenDeCocina();
+                    $this->quitarAvisoOrdenLista();
                 }
-                $this->quitarAvisoOrdenNueva();
+               
                 if($resp) {                    
                     $respuesta = $_respuestas->response;
                     $respuesta["result"] = array(
@@ -248,9 +265,34 @@ class ordenes extends conexion {
         } 
     }
 
+    private function quitarAvisoOrdenLista() {        
+        $ordenesDeLaSesion = $this->obtenerOrdenes($this->sesionID);
+        $ordeneslistas = false;
+        foreach($ordenesDeLaSesion as $orden) {
+            if($orden["estado"] == "lista") {
+                $ordeneslistas = true;
+            }
+        }        
+        if(!$ordeneslistas) {            
+            $query = "UPDATE sesiones SET ordenLista = 0 WHERE sesionID = '" . $this->sesionID . "'";
+            parent::nonQuery($query);
+        } 
+    }
+
     private function cambiarOrdenActiva(){
         $fechaActual = date("Y-m-d H:i:s");
         $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', activaFecha = '" . $fechaActual . "', listaFecha = NULL, finalizadaFecha = NULL WHERE ordenID = '" . $this->ordenID . "'";         
+        $resp = parent::nonQuery($query);       
+        if($resp >= 1){
+             return $resp;
+        }else{
+            return 0;
+        }
+    }
+
+    private function cambiarOrdenLista(){
+        $fechaActual = date("Y-m-d H:i:s");
+        $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', listaFecha = '" . $fechaActual . "', finalizadaFecha = NULL WHERE ordenID = '" . $this->ordenID . "'";         
         $resp = parent::nonQuery($query);       
         if($resp >= 1){
              return $resp;
@@ -290,6 +332,16 @@ class ordenes extends conexion {
             return 0;
         }
     }
+
+    private function quitarOrdenDeCocina() {
+        $query = "UPDATE " . $this->tabla . " SET cocina = 0 WHERE ordenID = '" . $this->ordenID . "'";
+        $resp = parent::nonQueryUpdate($query);
+    }
+
+    private function AgregarAvisoOrdenLista() {
+        $query = "UPDATE sesiones SET ordenLista = 1 WHERE sesionID = '" . $this->sesionID . "'"; 
+        parent::nonQuery($query);
+    } 
 }
 
 ?>
