@@ -219,9 +219,14 @@ class ordenes extends conexion {
                     $this->mozoID = $datos["mozoID"];
                 }
                 if($this->estado == "activa") {
-                    $resp = $this->cambiarOrdenActiva();
-                    $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
-                    $this->quitarAvisoOrdenNueva();
+                    $datosMozo = $this->verificarMozo();
+                    if($datosMozo["mozoID"] == $this->mozoID || $datosMozo["mozoID"] == null) {
+                        $resp = $this->cambiarOrdenActiva();
+                        $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
+                        $this->quitarAvisoOrdenNueva();                    
+                    } else {
+                        return $_respuestas->error_401();
+                    }
                 } else if ($this->estado == "lista") {
                     $resp = $this->cambiarOrdenLista();
                     $this->quitarPedidosDeCocina();
@@ -249,6 +254,17 @@ class ordenes extends conexion {
         } else {
             return $verificarToken;
         }
+    }
+
+    private function verificarMozo() {
+        $query = "SELECT * FROM sesiones WHERE sesionID = '" . $this->sesionID . "'";
+        $datosMozo = parent::obtenerDatos($query);
+        if($datosMozo) {
+            return $datosMozo[0];
+        } else {
+            return 0;
+        }
+
     }
 
     private function quitarAvisoOrdenNueva() {        
