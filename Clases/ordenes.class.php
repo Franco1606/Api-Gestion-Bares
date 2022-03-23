@@ -119,8 +119,14 @@ class ordenes extends conexion {
                 $verificarToken = $_token->verificarToken($datos);                
                 if($verificarToken == 1) {
                     $this->mozoID = $datos["mozoID"];
-                    $datosMozo = $this->obtenerMozo();                    
-                    $resp = $this->insertarOrdenMozo($datosMozo);
+                    $datosMozo = $this->obtenerMozo();
+                    $verif = $this->verificarMozoSesion();
+                    if($verif) {
+                        $resp = $this->insertarOrdenMozo($datosMozo);
+                    } else {
+                        return $_respuestas->error_401();
+                    }
+                    
                 } else {
                     return $verificarToken;
                 }
@@ -145,6 +151,16 @@ class ordenes extends conexion {
             }else{
                 return $_respuestas->error_500();
             }
+        }
+    }
+
+    private function verificarMozoSesion() {
+        $query = "SELECT * FROM sesiones WHERE sesionID = '" . $this->sesionID . "' AND mozoID = '" . $this->mozoID . "'";
+        $datosMozos = parent::obtenerDatos($query);
+        if($datosMozos) {
+            return $datosMozos[0];
+        } else {
+            return 0;
         }
     }
 
