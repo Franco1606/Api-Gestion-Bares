@@ -147,9 +147,9 @@ class ordenes extends conexion {
                 $this->AgregarAvisoOrdenNueva();
             }            
             $this->ordenID = $resp;            
-            $happy = $this->insertarPedidos();
-
-            if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {
+            $happy = $this->insertarPedidos();            
+            
+            if($this->mozoID) {
                 $this->cambiarOrdenActivaPedidos(1);
             }
             
