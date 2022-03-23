@@ -59,33 +59,54 @@ class ordenes extends conexion {
 
     //No necesita Token porque el cliente puede crear ordenes (INSERT en ordenes)
     public function post($postBody) {        
-        $_respuestas = new respuestas;
-        $_token = new token;
+        $_respuestas = new respuestas;        
         $datos = json_decode($postBody, true);               
-        if(!isset($datos['usuarioID']) || !isset($datos['estado']) || !isset($datos['solicitante']) || !isset($datos['total']) || !(isset($datos['mesaID']) || isset($datos['domicilio']))){
+        if(!isset($datos['usuarioID']) || !isset($datos['estado']) || !isset($datos['total']) || !(isset($datos['mesaID']) || isset($datos['domicilio']))){
             return $_respuestas->error_400();
-        }else{                  
+        }else{
             $this->usuarioID = $datos['usuarioID'];
             $this->fechaActual = date("Y-m-d H:i:s");
             $this->estado = $datos['estado'];
             $this->total = $datos['total'];
-            $this->solicitante = $datos['solicitante'];
+            if(isset($datos["solicitante"])) {
+                $this->solicitante = $datos['solicitante'];
+            }
             $this->pedidos = $datos['pedidos'];
             $this->mesaID = $datos['mesaID'];
-            $this->domicilio = $datos['domicilio'];
+            if(isset($datos["domicilio"])) {
+                $this->domicilio = $datos['domicilio'];
+            }
+
+            if(isset($datos["mozoID"])) {
+                $this->mozoID = $datos["mozoID"];
+            }
+            if(isset($datos["tokenMozo"])) {
+                $this->tokenMozo = $datos["tokenMozo"];
+            }
 
             //Caracteres para generar codigo aleatorio
             $permitted_chars = 'ABCDE0123456789';
             $this->numOrden = substr(str_shuffle($permitted_chars), 0, 10);
-
-            if($this->mesaID != 0) {                
+            
+            if($this->mesaID != 0) {
                 $this->campoLugar = "mesaID";
                 $this->lugar = $datos['mesaID'];
                 $sesion = $this->obtenerSesionAbierta();
                 if($sesion) {
                     $this->sesionID = $sesion["sesionID"];
                 } else {
-                    $this->insertarSesion("solicitada");
+                    if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {
+                        $_token = new token;                
+                        $verificarToken = $_token->verificarToken($datos);
+                        if($verificarToken == 1) {
+                            $this->mozoID = $datos["mozoID"];
+                            $this->insertarSesionMozo("abierta", $this->mozoID);
+                        } else {
+                            return $verificarToken;
+                        }
+                    } else {
+                        $this->insertarSesion("solicitada");
+                    }
                 }
             } else {
                 $this->campoLugar = "domicilio";
@@ -93,11 +114,24 @@ class ordenes extends conexion {
                 $this->sesionID = 0;
             }
 
-            $resp = $this->insertarOrden();
+            if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {                
+                $_token = new token;                
+                $verificarToken = $_token->verificarToken($datos);                
+                if($verificarToken == 1) {
+                    $this->mozoID = $datos["mozoID"];
+                    $datosMozo = $this->obtenerMozo();                    
+                    $resp = $this->insertarOrdenMozo($datosMozo);
+                } else {
+                    return $verificarToken;
+                }
+            } else {
+                $resp = $this->insertarOrden();
+            }
             if($this->estado == "nueva" && $resp) {
                 $this->AgregarAvisoOrdenNueva();
             }
-            $this->ordenID = $resp;
+
+            $this->ordenID = $resp;            
             $happy = $this->insertarPedidos();            
             if($resp){
                 $respuesta = $_respuestas->response;
@@ -111,6 +145,16 @@ class ordenes extends conexion {
             }else{
                 return $_respuestas->error_500();
             }
+        }
+    }
+
+    private function obtenerMozo() {
+        $query = "SELECT * FROM mozos WHERE mozoID = '" . $this->mozoID . "'";        
+        $datosMozos = parent::obtenerDatos($query);
+        if($datosMozos) {
+            return $datosMozos[0];
+        } else {
+            return 0;
         }
     }
 
@@ -129,8 +173,24 @@ class ordenes extends conexion {
         $this->sesionID = parent::nonQueryId($query);
     }
 
+    private function insertarSesionMozo($estado, $mozoID){
+        $query = "INSERT INTO sesiones (usuarioID, mesaID, solicitadaFecha, estado, mozoID) values ('" . $this->usuarioID . "','" . $this->mesaID ."','" . $this->fechaActual . "','" . $estado . "','" . $mozoID . "')";
+        $this->sesionID = parent::nonQueryId($query);
+    }
+
     private function insertarOrden(){
         $query = "INSERT INTO " . $this->tabla . " (usuarioID, nuevaFecha, estado, total, solicitante, numOrden, sesionID, " . $this->campoLugar . ") values ('" . $this->usuarioID . "','" . $this->fechaActual . "','" . $this->estado . "','" . $this->total . "','" . $this->solicitante . "','" . $this->numOrden . "','" . $this->sesionID . "','" . $this->lugar . "')";        
+        $resp = parent::nonQueryId($query);
+        if($resp){
+             return $resp;
+        }else{
+            return 0;
+        }
+    }
+
+    private function insertarOrdenMozo($datosMozo) {
+        $mozo = $datosMozo["nombre"];
+        $query = "INSERT INTO " . $this->tabla . " (usuarioID, nuevaFecha, activaFecha, estado, total, solicitante, numOrden, sesionID, " . $this->campoLugar . ") values ('" . $this->usuarioID . "','" . $this->fechaActual . "','" . $this->fechaActual . "','activa','" . $this->total . "','" . $mozo . "','" . $this->numOrden . "','" . $this->sesionID . "','" . $this->lugar . "')";        
         $resp = parent::nonQueryId($query);
         if($resp){
              return $resp;
