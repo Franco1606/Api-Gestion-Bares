@@ -128,7 +128,7 @@ class ordenes extends conexion {
                         } else if ($datosSesion["estado"] == "solicitada") {
                             $datos = $this->abrirSesionMozo();                                                        
                             if($datos) {
-                                $resp = $this->insertarOrdenMozo($datosMozo);
+                                $resp = $this->insertarOrdenMozo($datosMozo);                                
                             } else {
                                 return $_respuestas->error_200("Datos con formato incorrecto o no se encontraron los datos");
                             }                            
@@ -149,12 +149,15 @@ class ordenes extends conexion {
             $this->ordenID = $resp;            
             $happy = $this->insertarPedidos();
 
+            if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {
+                $this->cambiarOrdenActivaPedidos(1);
+            }
+            
             if($this->pedidoEnCocina) {
-                $this->estadoOrdenCocina($this->ordenID, 1);
+                $this->estadoOrdenCocina($this->ordenID, 1);                
             } else {
                 $this->estadoOrdenCocina($this->ordenID, 0);
             }
-
             if($resp){
                 $respuesta = $_respuestas->response;
                 $respuesta["result"] = array(
