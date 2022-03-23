@@ -10,6 +10,7 @@ class categorias extends conexion {
     private $nombre;
     private $comentario;
     private $mitad;
+    private $cocina;
     private $usuarioID;   
 
     public function obtenerCategorias($usuarioID) {
@@ -38,12 +39,15 @@ class categorias extends conexion {
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);                 
         if($verificarToken == 1) {                       
-            if(!isset($datos['nombre']) || !isset($datos['usuarioID'])){
+            if(!isset($datos['nombre']) || !isset($datos['comentario']) || !isset($datos['mitad']) || !isset($datos['cocina']) || !isset($datos['usuarioID'])){
                 return $_respuestas->error_400();
             }else{
                 
                 $this->usuarioID = $datos['usuarioID'];
-                $this->nombre = $datos['nombre'];                
+                $this->nombre = $datos['nombre'];
+                $this->comentario = $datos['comentario'];
+                $this->mitad = $datos['mitad'];
+                $this->cocina = $datos['cocina'];                
                 $resp = $this->insertarCategoria();
                 if($resp){                
                     $respuesta = $_respuestas->response;
@@ -62,7 +66,7 @@ class categorias extends conexion {
     }
 
     private function insertarCategoria(){
-        $query = "INSERT INTO " . $this->tabla . " (nombre, usuarioID) values ('" . $this->nombre . "','" . $this->usuarioID . "')";         
+        $query = "INSERT INTO " . $this->tabla . " (nombre, comentario, mitad, cocina, usuarioID) values ('" . $this->nombre . "','" . $this->comentario . "','" . $this->mitad . "','" . $this->cocina . "','" . $this->usuarioID . "')";         
         $resp = parent::nonQueryId($query);
         if($resp){
              return $resp;
@@ -77,15 +81,21 @@ class categorias extends conexion {
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);
         if($verificarToken == 1){
-            if(!isset($datos["nombre"]) || !isset($datos["comentario"]) || !isset($datos["mitad"]) || !isset($datos["categoriaID"])){
+            if(!isset($datos["nombre"]) || !isset($datos["comentario"]) || !isset($datos["mitad"]) || !isset($datos["cocina"]) || !isset($datos["categoriaID"])){
                 return $_respuestas->error_400();
             } else {
                 $this->nombre = $datos["nombre"];
                 $this->comentario = $datos["comentario"];
                 $this->mitad = $datos["mitad"];
+                $this->cocina = $datos["cocina"];
                 $this->categoriaID = $datos["categoriaID"];
-                $resp = $this->modificarCategoria();                               
-                if($resp) {                    
+                $resp = $this->modificarCategoria();                
+                if($resp) {    
+                    if($this->cocina) {
+                        $this->estadoCocinaProdDeLaCategoria(1);
+                    } else {
+                        $this->estadoCocinaProdDeLaCategoria(0);
+                    }                
                     $respuesta = $_respuestas->response;
                     $respuesta["result"] = array(
                         "status" => "ok",                         
@@ -103,13 +113,18 @@ class categorias extends conexion {
     }
 
     private function modificarCategoria(){
-        $query = "UPDATE " . $this->tabla . " SET nombre ='" . $this->nombre . "', comentario = '" . $this->comentario . "', mitad = '" . $this->mitad . "' WHERE categoriaID = '" . $this->categoriaID . "'";         
-        $resp = parent::nonQuery($query);       
-        if($resp >= 1){
+        $query = "UPDATE " . $this->tabla . " SET nombre ='" . $this->nombre . "', comentario = '" . $this->comentario . "', mitad = '" . $this->mitad . "', cocina = '" . $this->cocina . "' WHERE categoriaID = '" . $this->categoriaID . "'";         
+        $resp = parent::nonQueryUpdate($query);       
+        if($resp){
              return $resp;
         }else{
             return 0;
         }
+    }
+
+    private function estadoCocinaProdDeLaCategoria($cocina) {
+        $query = "UPDATE productos SET cocina = " . $cocina . " WHERE categoriaID = '" . $this->categoriaID . "'";
+        $resp = parent::nonQuery($query);
     }
 
     public function delete($postBody){
