@@ -91,9 +91,9 @@ class ordenes extends conexion {
             if($this->mesaID != 0) {
                 $this->campoLugar = "mesaID";
                 $this->lugar = $datos['mesaID'];
-                $sesion = $this->obtenerSesionAbierta();
+                $sesion = $this->obtenerSesionAbierta();                
                 if($sesion) {
-                    $this->sesionID = $sesion["sesionID"];
+                    $this->sesionID = $sesion["sesionID"];                   
                 } else {
                     if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {
                         $_token = new token;                
@@ -104,25 +104,34 @@ class ordenes extends conexion {
                         } else {
                             return $verificarToken;
                         }
-                    } else {
+                    } /* else {
                         $this->insertarSesion("solicitada");
-                    }
+                    } */
                 }
             } else {
                 $this->campoLugar = "domicilio";
                 $this->lugar = $datos['domicilio'];
                 $this->sesionID = 0;
-            }
+            }            
 
-            if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {                
+            if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {
                 $_token = new token;                
                 $verificarToken = $_token->verificarToken($datos);                
                 if($verificarToken == 1) {
-                    $this->mozoID = $datos["mozoID"];
-                    $datosMozo = $this->obtenerMozo();
-                    $verif = $this->verificarMozoSesion();
-                    if($verif) {
-                        $resp = $this->insertarOrdenMozo($datosMozo);
+                    $this->mozoID = $datos["mozoID"];                    
+                    $datosMozo = $this->obtenerMozo();                    
+                    $datosSesion = $this->verificarMozoSesion();                    
+                    if($datosSesion) {
+                        if($datosSesion["estado"] == "abierta") {
+                            $resp = $this->insertarOrdenMozo($datosMozo);
+                        } else if ($datosSesion["estado"] == "solicitada") {
+                            $datos = $this->abrirSesionMozo();                                                        
+                            if($datos) {
+                                $resp = $this->insertarOrdenMozo($datosMozo);
+                            } else {
+                                return $_respuestas->error_200("Datos con formato incorrecto o no se encontraron los datos");
+                            }                            
+                        }
                     } else {
                         return $_respuestas->error_401();
                     }
@@ -154,8 +163,18 @@ class ordenes extends conexion {
         }
     }
 
+    private function abrirSesionMozo() {
+        $query = "UPDATE sesiones SET estado = 'abierta', mozoID = '" . $this->mozoID . "', abiertaFecha = '" . $this->fechaActual . "', llamarMozo = 0 WHERE sesionID = '" . $this->sesionID . "'";        
+        $resp = parent::nonQuery($query);
+        if($resp) {
+            return $resp;
+        } else {
+            return 0;
+        }
+    }
+
     private function verificarMozoSesion() {
-        $query = "SELECT * FROM sesiones WHERE sesionID = '" . $this->sesionID . "' AND mozoID = '" . $this->mozoID . "'";
+        $query = "SELECT * FROM sesiones WHERE (sesionID = '" . $this->sesionID . "' AND mozoID = '" . $this->mozoID . "') OR (estado = 'solicitada' AND sesionID = '" . $this->sesionID . "')";        
         $datosMozos = parent::obtenerDatos($query);
         if($datosMozos) {
             return $datosMozos[0];
