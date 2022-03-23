@@ -43,7 +43,7 @@ class pedidos extends conexion {
     }
 
     public function obtenerPedidosEnCocina($usuarioID, $cocina) {
-        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND cocina = '" . $cocina . "'";
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND cocina = '" . $cocina . "' AND ordenActiva = 1";
         $datosProudctos = parent::obtenerDatos($query);        
         if($datosProudctos) {
             return $datosProudctos;
