@@ -26,6 +26,7 @@ class ordenes extends conexion {
     private $numOrden;
     private $pedidos;
     private $mozoID;
+    private $pedidoEnCocina = false;
 
     public function obtenerOrdenes($sesionID) {
         $query = "SELECT * FROM " . $this->tabla . " WHERE sesionID = '" . $sesionID . "'";        
@@ -38,7 +39,7 @@ class ordenes extends conexion {
     }
 
     public function obtenerOrdenesPorUsuario($usuarioID, $cocina) {
-        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND cocina = '" . $cocina . "'";        
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND cocina = '" . $cocina . "' AND estado = 'activa'";        
         $datosProudctos = parent::obtenerDatos($query);        
         if($datosProudctos) {
             return $datosProudctos;
@@ -104,9 +105,9 @@ class ordenes extends conexion {
                         } else {
                             return $verificarToken;
                         }
-                    } /* else {
+                    } else {
                         $this->insertarSesion("solicitada");
-                    } */
+                    }
                 }
             } else {
                 $this->campoLugar = "domicilio";
@@ -144,10 +145,16 @@ class ordenes extends conexion {
             }
             if($this->estado == "nueva" && $resp) {
                 $this->AgregarAvisoOrdenNueva();
+            }            
+            $this->ordenID = $resp;            
+            $happy = $this->insertarPedidos();
+
+            if($this->pedidoEnCocina) {
+                $this->estadoOrdenCocina($this->ordenID, 1);
+            } else {
+                $this->estadoOrdenCocina($this->ordenID, 0);
             }
 
-            $this->ordenID = $resp;            
-            $happy = $this->insertarPedidos();            
             if($resp){
                 $respuesta = $_respuestas->response;
                 $respuesta["result"] = array(
@@ -161,6 +168,11 @@ class ordenes extends conexion {
                 return $_respuestas->error_500();
             }
         }
+    }
+
+    private function estadoOrdenCocina($ordenID, $cocina) {
+        $query = "UPDATE ordenes SET cocina = " . $cocina . " WHERE ordenID = '" . $ordenID . "'";
+        $resp = parent::nonQueryUpdate($query);
     }
 
     private function abrirSesionMozo() {
@@ -249,12 +261,16 @@ class ordenes extends conexion {
             $cantidad = $pedido["cantidad"];
             $nombre = $pedido["nombre"];
             $precio = $pedido["precio"];
+            $cocina = $pedido["cocina"];
+            if($cocina) {
+                $this->pedidoEnCocina = true;
+            }
             if(isset($pedido["comentario"])) {
                 $comentario = $pedido["comentario"];
             } else {
                 $comentario = null;
             }
-            $query = "INSERT INTO pedidos (ordenID, productoID, categoriaID, categoriaNombre, usuarioID, sesionID, cantidad, nombre, comentario, precio, happy, cocina) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $categoriaID . "','" . $categoriaNombre . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "','" . $happy . "',0 )";
+            $query = "INSERT INTO pedidos (ordenID, productoID, categoriaID, categoriaNombre, usuarioID, sesionID, cantidad, nombre, comentario, precio, cocina, happy) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $categoriaID . "','" . $categoriaNombre . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "','" . $cocina . "','" . $happy . "')";
             parent::nonQueryId($query);            
         }
         return $happy;
@@ -317,18 +333,21 @@ class ordenes extends conexion {
                     $datosMozo = $this->verificarMozo();
                     if($datosMozo["mozoID"] == $this->mozoID || $datosMozo["mozoID"] == null) {
                         $resp = $this->cambiarOrdenActiva();
+                        $this->cambiarOrdenActivaPedidos(1);
                         $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
-                        $this->quitarAvisoOrdenNueva();                    
+                        $this->quitarAvisoOrdenNueva();
                     } else {
                         return $_respuestas->error_401();
                     }
                 } else if ($this->estado == "lista") {
                     $resp = $this->cambiarOrdenLista();
+                    $this->cambiarOrdenActivaPedidos(0);
                     $this->quitarPedidosDeCocina();
                     $this->quitarOrdenDeCocina();
                     $this->AgregarAvisoOrdenLista();
                 } else if ($this->estado == "finalizada") {
                     $resp = $this->cambiarOrdenFinalizada();
+                    $this->cambiarOrdenActivaPedidos(0);
                     $this->quitarPedidosDeCocina();
                     $this->quitarOrdenDeCocina();
                     $this->quitarAvisoOrdenLista();
@@ -349,6 +368,11 @@ class ordenes extends conexion {
         } else {
             return $verificarToken;
         }
+    }
+
+    private function cambiarOrdenActivaPedidos($ordenActiva) {
+        $query = "UPDATE pedidos set ordenActiva = " . $ordenActiva . " WHERE ordenID = '" . $this->ordenID . "'";
+        parent::nonQuery($query);
     }
 
     private function verificarMozo() {
