@@ -441,7 +441,7 @@ class ordenes extends conexion {
 
     private function cambiarOrdenFinalizada(){
         $fechaActual = date("Y-m-d H:i:s");
-        $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', finalizadaFecha = '" . $fechaActual . "' WHERE ordenID = '" . $this->ordenID . "'";         
+        $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', finalizadaFecha = '" . $fechaActual . "', finalizoMozoID = '" . $this->mozoID . "' WHERE ordenID = '" . $this->ordenID . "'";         
         $resp = parent::nonQuery($query);
         if($resp >= 1){
              return $resp;
