@@ -31,7 +31,7 @@ class token extends conexion {
                     $this->eliminarToken($datos);                  
                     return $_respuestas->error_401("El Token que envio es invalido o ha caducado");                
                 }
-                else {
+                else {                    
                     $this->actualizarToken($datos);
                     $verificacion = 1;                    
                     return $verificacion;
