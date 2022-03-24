@@ -122,7 +122,39 @@ class pedidos extends conexion {
         $resp = parent::nonQueryUpdate($query);
     }
 
+    public function delete($postBody){
+        $_respuestas = new respuestas;
+        $_token = new token;        
+        $datos = json_decode($postBody, true);
+        $verificarToken = $_token->verificarToken($datos);
+        if($verificarToken == 1) {
+            if(!isset($datos['pedidoID'])){
+                return $_respuestas->error_400();
+            }else{
+                $this->pedidoID = $datos['pedidoID'];
+                $resp = $this->eliminarPedido();
+                if($resp){                    
+                    $respuesta = $_respuestas->response;
+                    $respuesta["result"] = array(
+                        "pedidoID" => $this->pedidoID
+                    );                    
+                    return $respuesta;
+                }else{
+                    return $_respuestas->error_500("Error interno del servidor, no se pudo borrar el registro o el registro no existia");
+                }
+            }
+        }
+    }
 
+    private function eliminarPedido(){
+        $query = "DELETE FROM " . $this->tabla . " WHERE pedidoID = '" . $this->pedidoID . "'";               
+        $resp = parent::nonQuery($query);
+        if($resp >= 1 ){
+            return $resp;
+        }else{
+            return 0;
+        }
+    }
 }
 
 ?>
