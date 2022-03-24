@@ -114,22 +114,30 @@ class sesiones extends conexion {
         $datos = json_decode($postBody, true); 
         $_respuestas = new respuestas;
         $_token = new token;
-        $verificarToken = $_token->verificarToken($datos);
+        $verificarToken = $_token->verificarToken($datos);        
             if($verificarToken == 1){
-            if(!isset($datos["estado"]) || !isset($datos["sesionID"])){
+            if(!isset($datos["sesionID"])){
                 return $_respuestas->error_400();
             } else {
-                $this->estado = $datos["estado"];
                 $this->sesionID = $datos["sesionID"];
-                if($this->estado == "cerrada") {
-                    $resp = $this->cambiarCerrada();
-                }    
+                if(isset($datos["estado"])) {
+                    $this->estado = $datos["estado"];
+                    if($this->estado == "cerrada") {
+                        $resp = $this->cambiarCerrada();
+                    }
+                }
+                
+                if(isset($datos["mozoID"])) {
+                    $this->mozoID = $datos["mozoID"];
+                    $resp = $this->cambiarMozo();
+                }                
+
                 if($resp) {                    
                     $respuesta = $_respuestas->response;
                     $respuesta["result"] = array(
                         "status" => "ok",
-                        "ordenID" => $this->sesionID
-                    );
+                        "sesionID" => $this->sesionID
+                    );                    
                     return $respuesta;
                 } else {
                     return $_respuestas->error_500("Error interno del servidor, el cambio no se guardo o no hubo modificaciones en el registro");
@@ -151,7 +159,17 @@ class sesiones extends conexion {
         }else{
             return 0;
         }
-    }    
+    } 
+    
+    private function cambiarMozo(){        
+        $query = "UPDATE " . $this->tabla . " SET mozoID = '" . $this->mozoID . "' WHERE sesionID = '" . $this->sesionID . "'";
+        $resp = parent::nonQuery($query);       
+        if($resp >= 1){
+             return $resp;
+        }else{
+            return 0;
+        }
+    } 
 }
 
 ?>
