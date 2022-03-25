@@ -18,8 +18,18 @@ class sesiones extends conexion {
     private $ordenLista;
     private $llamarMozo;
 
-    public function obtenerSesiones($usuarioID) {
-        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "'";        
+    public function obtenerSesionesActivas($usuarioID) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND (estado = 'abierta' OR estado = 'solicitada')";        
+        $datosSesiones = parent::obtenerDatos($query);
+        if($datosSesiones) {
+            return $datosSesiones;
+        } else {
+            return 0;
+        }
+    }
+
+    public function obtenerSesionesCerradas($usuarioID) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuarioID = '" . $usuarioID . "' AND estado = 'cerrada'";        
         $datosSesiones = parent::obtenerDatos($query);
         if($datosSesiones) {
             return $datosSesiones;
