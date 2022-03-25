@@ -34,7 +34,7 @@ class mozos extends conexion {
     }
 
     private function verificarExistencia(){
-        $query = "SELECT * FROM " . $this->tabla . " WHERE usuario = '" . $this->usuario . "'";        
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuario = '" . $this->usuario . "' AND usuarioID = '" . $this->usuarioID . "'";        
         $datosMozo = parent::obtenerDatos($query);        
         if($datosMozo) {
             return $datosMozo[0];
