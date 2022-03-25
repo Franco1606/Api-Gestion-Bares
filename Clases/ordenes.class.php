@@ -265,6 +265,8 @@ class ordenes extends conexion {
             $nombre = $pedido["nombre"];
             $precio = $pedido["precio"];
             $cocina = $pedido["cocina"];
+            $comandera = $pedido["comandera"];
+            $productoCocina = $pedido["productoCocina"];
             if($cocina) {
                 $this->pedidoEnCocina = true;
             }
@@ -273,7 +275,7 @@ class ordenes extends conexion {
             } else {
                 $comentario = null;
             }
-            $query = "INSERT INTO pedidos (ordenID, productoID, categoriaID, categoriaNombre, usuarioID, sesionID, cantidad, nombre, comentario, precio, cocina, happy) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $categoriaID . "','" . $categoriaNombre . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "','" . $cocina . "','" . $happy . "')";
+            $query = "INSERT INTO pedidos (ordenID, productoID, categoriaID, categoriaNombre, usuarioID, sesionID, cantidad, nombre, comentario, precio, cocina, comandera, productoCocina, happy) VALUES ('". $this->ordenID . "','" . $productoID . "','" . $categoriaID . "','" . $categoriaNombre . "','" . $this->usuarioID . "','" . $this->sesionID . "','" . $cantidad . "','" . $nombre . "','" . $comentario . "','" . $precio . "','" . $cocina . "','" . $comandera . "','" . $productoCocina . "','" . $happy . "')";
             parent::nonQueryId($query);            
         }
         return $happy;
@@ -389,16 +391,17 @@ class ordenes extends conexion {
 
     }
 
-    private function quitarAvisoOrdenNueva() {        
-        $ordenesDeLaSesion = $this->obtenerOrdenes($this->sesionID);
+    private function quitarAvisoOrdenNueva() {                
+        $ordenesDeLaSesion = $this->obtenerOrdenes($this->sesionID);        
         $ordenesNuevas = false;
         foreach($ordenesDeLaSesion as $orden) {
             if($orden["estado"] == "nueva") {
                 $ordenesNuevas = true;
             }
-        }        
-        if(!$ordenesNuevas) {            
-            $query = "UPDATE sesiones SET ordenNueva = 0 WHERE sesionID = '" . $this->sesionID . "'";
+        }
+        
+        if(!$ordenesNuevas) {
+            $query = "UPDATE sesiones SET ordenNueva = 0 WHERE sesionID = '" . $this->sesionID . "'";                       
             parent::nonQuery($query);
         } 
     }
@@ -479,7 +482,43 @@ class ordenes extends conexion {
     private function AgregarAvisoOrdenLista() {
         $query = "UPDATE sesiones SET ordenLista = 1 WHERE sesionID = '" . $this->sesionID . "'"; 
         parent::nonQuery($query);
-    } 
+    }
+
+    public function delete($postBody){        
+        $_respuestas = new respuestas;
+        $_token = new token;        
+        $datos = json_decode($postBody, true);
+        $verificarToken = $_token->verificarToken($datos);
+        if($verificarToken == 1) {
+            if(!isset($datos['ordenID'])){
+                return $_respuestas->error_400();
+            }else{                
+                $this->ordenID = $datos['ordenID'];
+                $this->sesionID = $datos['sesionID'];
+                $resp = $this->eliminarOrden();                
+                if($resp){
+                    $this->quitarAvisoOrdenNueva();
+                    $respuesta = $_respuestas->response;
+                    $respuesta["result"] = array(
+                        "ordenID" => $this->ordenID
+                    );                    
+                    return $respuesta;
+                }else{
+                    return $_respuestas->error_500("Error interno del servidor, no se pudo borrar el registro o el registro no existia");
+                }
+            }
+        }
+    }
+
+    private function eliminarOrden(){        
+        $query = "DELETE FROM " . $this->tabla . " WHERE ordenID = '" . $this->ordenID . "'";        
+        $resp = parent::nonQuery($query);
+        if($resp >= 1 ){            
+            return $resp;
+        }else{
+            return 0;
+        }
+    }
 }
 
 ?>
