@@ -42,7 +42,7 @@ class productos extends conexion {
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);        
         if($verificarToken == 1) {                       
-            if(!isset($datos['nombre']) || !isset($datos['precio']) || !isset($datos['cocina']) || !isset($datos['usuarioID']) || !isset($datos['categoriaID']) || !isset($datos['categoriaNombre'])){
+            if(!isset($datos['nombre']) || !isset($datos['precio']) || !isset($datos['cocina']) || !isset($datos['comandera']) || !isset($datos['usuarioID']) || !isset($datos['categoriaID']) || !isset($datos['categoriaNombre'])){
                 return $_respuestas->error_400();
             }else{
                 $this->nombre = $datos['nombre'];
@@ -51,6 +51,7 @@ class productos extends conexion {
                 }
                 $this->precio = $datos['precio'];
                 $this->cocina = $datos['cocina'];
+                $this->comandera = $datos['comandera'];
                 $this->mostrar = 1;
                 $this->usuarioID = $datos['usuarioID'];
                 $this->categoriaID = $datos['categoriaID'];
@@ -73,7 +74,7 @@ class productos extends conexion {
     }
 
     private function insertarProdcuto(){
-        $query = "INSERT INTO " . $this->tabla . " (nombre, descripcion, precio, cocina, mostrar, usuarioID, categoriaID, categoriaNombre) values ('" . $this->nombre . "','" . $this->descripcion ."','" . $this->precio . "','" . $this->cocina . "',1 ,'" . $this->usuarioID . "','" . $this->categoriaID . "','" . $this->categoriaNombre . "')";        
+        $query = "INSERT INTO " . $this->tabla . " (nombre, descripcion, precio, cocina, comandera, mostrar, usuarioID, categoriaID, categoriaNombre) values ('" . $this->nombre . "','" . $this->descripcion ."','" . $this->precio . "','" . $this->cocina .  "','" . $this->comandera . "',1 ,'" . $this->usuarioID . "','" . $this->categoriaID . "','" . $this->categoriaNombre . "')";        
         $resp = parent::nonQueryId($query);
         if($resp){
              return $resp;
