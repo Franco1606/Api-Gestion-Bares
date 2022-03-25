@@ -6,9 +6,12 @@ $_sesiones = new sesiones;
 $_respuestas = new respuestas;
 
 if($_SERVER["REQUEST_METHOD"] == "GET") {
-    if(isset($_GET["usuarioID"])) {
+    if(isset($_GET["usuarioID"]) && isset($_GET["activas"])) {
         $usuarioID = $_GET["usuarioID"];
-        $datossesiones = $_sesiones->obtenerSesiones($usuarioID);
+        $datossesiones = $_sesiones->obtenerSesionesActivas($usuarioID);
+    } else if(isset($_GET["usuarioID"]) && isset($_GET["cerradas"])) {
+        $usuarioID = $_GET["usuarioID"];
+        $datossesiones = $_sesiones->obtenerSesionesCerradas($usuarioID);
     } else if(isset($_GET["sesionID"])) {
         $sesionID = $_GET["sesionID"];
         $datossesiones = $_sesiones->obtenerSesion($sesionID);
