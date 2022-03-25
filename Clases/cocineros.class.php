@@ -34,7 +34,7 @@ class cocineros extends conexion {
     }
 
     private function verificarExistencia(){
-        $query = "SELECT * FROM " . $this->tabla . " WHERE usuario = '" . $this->usuario . "'";        
+        $query = "SELECT * FROM " . $this->tabla . " WHERE usuario = '" . $this->usuario . "' AND usuarioID = '" . $this->usuarioID . "'";        
         $datosCocinero = parent::obtenerDatos($query);        
         if($datosCocinero) {
             return $datosCocinero[0];
