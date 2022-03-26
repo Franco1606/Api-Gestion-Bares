@@ -99,6 +99,7 @@ class categorias extends conexion {
                 $resp = $this->modificarCategoria();
                 if($resp) {
                     $this->actualizarComanderaProductos();
+                    $this->actualizarComanderaPedidos();
                     if($this->cocina) {
                         $this->estadoCocinaProdDeLaCategoria(1);
                     } else {
@@ -137,6 +138,11 @@ class categorias extends conexion {
 
     private function actualizarComanderaProductos() {
         $query = "UPDATE productos SET comandera = " . $this->comandera . " WHERE categoriaID = '" . $this->categoriaID . "'";
+        $resp = parent::nonQuery($query);
+    }
+
+    private function actualizarComanderaPedidos() {
+        $query = "UPDATE pedidos SET comandera = " . $this->comandera . " WHERE categoriaID = '" . $this->categoriaID . "'";
         $resp = parent::nonQuery($query);
     }
 
