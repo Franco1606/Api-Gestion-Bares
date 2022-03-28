@@ -110,9 +110,8 @@ class ordenes extends conexion {
                         $this->insertarSesion("solicitada");
                     }
                 }
-            } else {
-                $this->mozoID = 0;
-                $this->insertarSesion("domicilio");
+            } else {                
+                $this->insertarSesionDomicilio();
                 $this->campoLugar = "domicilio";
                 $this->lugar = $datos['domicilio'];                 
             }            
@@ -235,6 +234,11 @@ class ordenes extends conexion {
         $this->sesionID = parent::nonQueryId($query);
     }
 
+    private function insertarSesionDomicilio(){
+        $query = "INSERT INTO sesiones (usuarioID, domicilio, solicitadaFecha, estado) values ('" . $this->usuarioID . "','" . $this->domicilio ."','" . $this->fechaActual . "', 'domicilio')";
+        $this->sesionID = parent::nonQueryId($query);
+    }
+
     private function insertarSesionMozo($estado, $mozoID){
         $query = "INSERT INTO sesiones (usuarioID, mesaID, solicitadaFecha, estado, mozoID) values ('" . $this->usuarioID . "','" . $this->mesaID ."','" . $this->fechaActual . "','" . $estado . "','" . $mozoID . "')";
         $this->sesionID = parent::nonQueryId($query);
@@ -352,12 +356,17 @@ class ordenes extends conexion {
                     }
                     if($this->estado == "activa") {
                         $datosMozo = $this->verificarMozo();
-                        if($datosMozo["mozoID"] == $this->mozoID || $datosMozo["mozoID"] == null) {
+                        if($this->mozoID == 9999) {
+                            $resp = $this->cambiarOrdenActiva();
+                            $this->cambiarOrdenActivaPedidos(1);                                                    
+                            $this->quitarAvisoOrdenNueva();
+                        } else if($datosMozo["mozoID"] == $this->mozoID || $datosMozo["mozoID"] == null) {
                             $resp = $this->cambiarOrdenActiva();
                             $this->cambiarOrdenActivaPedidos(1);
-                            $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
+                            $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);                        
                             $this->quitarAvisoOrdenNueva();
-                        } else {
+                        } 
+                        else {
                             return $_respuestas->error_401();
                         }
                     } else if ($this->estado == "lista") {
@@ -367,7 +376,11 @@ class ordenes extends conexion {
                         $this->quitarOrdenDeCocina();
                         $this->AgregarAvisoOrdenLista();
                     } else if ($this->estado == "finalizada") {
-                        $resp = $this->cambiarOrdenFinalizada();
+                        if($this->mozoID == 9999) {
+                            $resp = $this->cambiarOrdenFinalizadaDomicilio();
+                        } else {
+                            $resp = $this->cambiarOrdenFinalizada();
+                        }
                         $this->cambiarOrdenActivaPedidos(0);
                         $this->quitarPedidosDeCocina();
                         $this->quitarOrdenDeCocina();
@@ -479,6 +492,17 @@ class ordenes extends conexion {
             return 0;
         }
     }
+
+    private function cambiarOrdenFinalizadaDomicilio(){
+        $fechaActual = date("Y-m-d H:i:s");
+        $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', finalizadaFecha = '" . $fechaActual . "' WHERE ordenID = '" . $this->ordenID . "'";         
+        $resp = parent::nonQuery($query);
+        if($resp >= 1){
+             return $resp;
+        }else{
+            return 0;
+        }
+    }    
 
     private function cambiarMesaAbierta($mozoID, $sesionID) {
         $fechaActual = date("Y-m-d H:i:s");
