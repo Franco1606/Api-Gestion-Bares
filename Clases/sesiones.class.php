@@ -179,7 +179,45 @@ class sesiones extends conexion {
         }else{
             return 0;
         }
-    } 
+    }
+
+    public function delete($postBody){
+        $_respuestas = new respuestas;
+        $_token = new token;        
+        $datos = json_decode($postBody, true);
+        $verificarToken = $_token->verificarToken($datos);                
+        if($verificarToken == 1){
+            if(!isset($datos['sesionID'])){
+                return $_respuestas->error_400();
+            }else{
+                $this->sesionID = $datos['sesionID'];
+                $resp = $this->eliminarSesion();
+                if($resp){                    
+                    $respuesta = $_respuestas->response;
+                    $respuesta["result"] = array(
+                        "sesionID" => $this->sesionID
+                    );
+                    return $respuesta;
+                }else{
+                    return $_respuestas->error_500("Error interno del servidor, no se pudo borrar el registro o el registro no existia");
+                }
+            }
+
+        } else {
+            return $verificarToken;
+        }            
+    }
+
+    private function eliminarSesion(){
+        $query = "DELETE FROM " . $this->tabla . " WHERE sesionID = '" . $this->sesionID . "'";
+        $resp = parent::nonQuery($query);
+        if($resp >= 1 ){
+            return $resp;
+        }else{
+            return 0;
+        }
+    }
+
 }
 
 ?>
