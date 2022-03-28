@@ -6,8 +6,7 @@ require_once "token.class.php";
 class happy extends conexion {    
 
     private $tabla = "happy";
-    private $categoriaID;
-    private $estado;
+    private $categoriaID;    
     private $inicio;
     private $fin;
     private $lunes;
@@ -34,12 +33,11 @@ class happy extends conexion {
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);                 
         if($verificarToken == 1) {
-            if(!isset($datos['categoriaID']) || !isset($datos['usuarioID']) || !isset($datos['estado']) || !isset($datos['inicio']) || !isset($datos['fin'])){
+            if(!isset($datos['categoriaID']) || !isset($datos['usuarioID']) || !isset($datos['inicio']) || !isset($datos['fin'])){
                 return $_respuestas->error_400();
             }else{                
                 $this->usuarioID = $datos['usuarioID'];
-                $this->categoriaID = $datos['categoriaID'];
-                $this->estado = $datos['estado'];
+                $this->categoriaID = $datos['categoriaID'];                
                 $this->inicio = $datos['inicio'];
                 $this->fin = $datos['fin'];                
                 if(isset($datos["lunes"])) {$this->lunes = $datos["lunes"];}
@@ -80,7 +78,7 @@ class happy extends conexion {
     }    
 
     private function insertarHappy(){
-        $query = "INSERT INTO " . $this->tabla . " (usuarioID, categoriaID, estado, inicio, fin, lunes, martes, miercoles, jueves, viernes, sabado, domingo) values ('" . $this->usuarioID . "','" . $this->categoriaID . "','" . $this->estado . "','" . $this->inicio . "','" . $this->fin . "','" . $this->lunes . "','" . $this->martes . "','" . $this->miercoles . "','" . $this->jueves . "','" . $this->viernes . "','" . $this->sabado . "','" . $this->domingo . "')";              
+        $query = "INSERT INTO " . $this->tabla . " (usuarioID, categoriaID, inicio, fin, lunes, martes, miercoles, jueves, viernes, sabado, domingo) values ('" . $this->usuarioID . "','" . $this->categoriaID . "','" . $this->inicio . "','" . $this->fin . "','" . $this->lunes . "','" . $this->martes . "','" . $this->miercoles . "','" . $this->jueves . "','" . $this->viernes . "','" . $this->sabado . "','" . $this->domingo . "')";              
         $resp = parent::nonQueryId($query);
         if($resp){
              return $resp;
@@ -90,7 +88,7 @@ class happy extends conexion {
     }
 
     private function modificarHappy(){
-        $query = "UPDATE " . $this->tabla . " SET estado ='" . $this->estado . "', inicio = '" . $this->inicio . "', fin = '" . $this->fin . "', lunes = '" . $this->lunes . "', martes = '" . $this->martes . "', miercoles = '" . $this->miercoles . "', jueves = '" . $this->jueves . "', viernes = '" . $this->viernes . "', sabado = '" . $this->sabado . "', domingo = '" . $this->domingo . "' WHERE usuarioID = '" . $this->usuarioID . "' AND categoriaID = '" . $this->categoriaID . "'";        
+        $query = "UPDATE " . $this->tabla . " SET inicio = '" . $this->inicio . "', fin = '" . $this->fin . "', lunes = '" . $this->lunes . "', martes = '" . $this->martes . "', miercoles = '" . $this->miercoles . "', jueves = '" . $this->jueves . "', viernes = '" . $this->viernes . "', sabado = '" . $this->sabado . "', domingo = '" . $this->domingo . "' WHERE usuarioID = '" . $this->usuarioID . "' AND categoriaID = '" . $this->categoriaID . "'";        
         $resp = parent::nonQueryUpdate($query);       
         if($resp){
              return 1;
@@ -112,7 +110,7 @@ class happy extends conexion {
                 $this->comentario = $datos["comentario"];
                 $this->mitad = $datos["mitad"];
                 $this->categoriaID = $datos["categoriaID"];
-                $resp = $this->modificarCategoria();                               
+                $resp = $this->modificarCategoria();
                 if($resp) {                    
                     $respuesta = $_respuestas->response;
                     $respuesta["result"] = array(
