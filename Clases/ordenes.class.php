@@ -20,6 +20,7 @@ class ordenes extends conexion {
     private $domicilio;
     private $mesaID;
     private $total;
+    private $impresa;
     //Atributos de uso local
     private $campoLugar;
     private $lugar;
@@ -110,9 +111,10 @@ class ordenes extends conexion {
                     }
                 }
             } else {
+                $this->mozoID = 0;
+                $this->insertarSesion("domicilio");
                 $this->campoLugar = "domicilio";
-                $this->lugar = $datos['domicilio'];
-                $this->sesionID = 0;
+                $this->lugar = $datos['domicilio'];                 
             }            
 
             if(isset($datos["mozoID"]) && isset($datos["tokenMozo"])) {
@@ -210,6 +212,16 @@ class ordenes extends conexion {
 
     private function obtenerSesionAbierta() {
         $query = "SELECT * FROM sesiones WHERE usuarioID = '" . $this->usuarioID . "' AND mesaID = '" . $this->mesaID . "' AND (estado = 'abierta' OR estado = 'solicitada')";               
+        $datosSesiones = parent::obtenerDatos($query);        
+        if($datosSesiones) {
+            return $datosSesiones[0];
+        } else {
+            return 0;
+        }
+    }
+
+    private function obtenerSesionesDomicilio() {
+        $query = "SELECT * FROM sesiones WHERE usuarioID = '" . $this->usuarioID . "' AND sesionID = 0";               
         $datosSesiones = parent::obtenerDatos($query);        
         if($datosSesiones) {
             return $datosSesiones[0];
@@ -323,39 +335,44 @@ class ordenes extends conexion {
         $datos = json_decode($postBody, true);
         $verificarToken = $_token->verificarToken($datos);
         if($verificarToken == 1){
-            if(!isset($datos["estado"]) || !isset($datos["ordenID"])){
+            if(!isset($datos["ordenID"])){
                 return $_respuestas->error_400();
             } else {
-                $this->estado = $datos["estado"];
                 $this->ordenID = $datos["ordenID"];
-                if(isset($datos['sesionID'])) {
-                    $this->sesionID = $datos["sesionID"];
-                }
-                if(isset($datos['mozoID'])) {
-                    $this->mozoID = $datos["mozoID"];
-                }
-                if($this->estado == "activa") {
-                    $datosMozo = $this->verificarMozo();
-                    if($datosMozo["mozoID"] == $this->mozoID || $datosMozo["mozoID"] == null) {
-                        $resp = $this->cambiarOrdenActiva();
-                        $this->cambiarOrdenActivaPedidos(1);
-                        $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
-                        $this->quitarAvisoOrdenNueva();
-                    } else {
-                        return $_respuestas->error_401();
+                if(isset($datos['impresa'])) {
+                    $this->impresa = $datos["impresa"];
+                    $resp =  $this->marcarImpresa();
+                } else {
+                    $this->estado = $datos["estado"];                
+                    if(isset($datos['sesionID'])) {
+                        $this->sesionID = $datos["sesionID"];
                     }
-                } else if ($this->estado == "lista") {
-                    $resp = $this->cambiarOrdenLista();
-                    $this->cambiarOrdenActivaPedidos(0);
-                    $this->quitarPedidosDeCocina();
-                    $this->quitarOrdenDeCocina();
-                    $this->AgregarAvisoOrdenLista();
-                } else if ($this->estado == "finalizada") {
-                    $resp = $this->cambiarOrdenFinalizada();
-                    $this->cambiarOrdenActivaPedidos(0);
-                    $this->quitarPedidosDeCocina();
-                    $this->quitarOrdenDeCocina();
-                    $this->quitarAvisoOrdenLista();
+                    if(isset($datos['mozoID'])) {
+                        $this->mozoID = $datos["mozoID"];
+                    }
+                    if($this->estado == "activa") {
+                        $datosMozo = $this->verificarMozo();
+                        if($datosMozo["mozoID"] == $this->mozoID || $datosMozo["mozoID"] == null) {
+                            $resp = $this->cambiarOrdenActiva();
+                            $this->cambiarOrdenActivaPedidos(1);
+                            $this->cambiarMesaAbierta($this->mozoID ,$this->sesionID);
+                            $this->quitarAvisoOrdenNueva();
+                        } else {
+                            return $_respuestas->error_401();
+                        }
+                    } else if ($this->estado == "lista") {
+                        $resp = $this->cambiarOrdenLista();
+                        $this->cambiarOrdenActivaPedidos(0);
+                        $this->quitarPedidosDeCocina();
+                        $this->quitarOrdenDeCocina();
+                        $this->AgregarAvisoOrdenLista();
+                    } else if ($this->estado == "finalizada") {
+                        $resp = $this->cambiarOrdenFinalizada();
+                        $this->cambiarOrdenActivaPedidos(0);
+                        $this->quitarPedidosDeCocina();
+                        $this->quitarOrdenDeCocina();
+                        $this->quitarAvisoOrdenLista();
+                    }
                 }
                
                 if($resp) {                    
@@ -372,6 +389,16 @@ class ordenes extends conexion {
 
         } else {
             return $verificarToken;
+        }
+    }
+
+    private function marcarImpresa () {
+        $query = "UPDATE " . $this->tabla . " SET impresa = '" . $this->impresa . "' WHERE ordenID = '" . $this->ordenID . "'";
+        $resp = parent::nonQuery($query);
+        if($resp >= 1){
+            return $resp;
+        } else{
+           return 0;
         }
     }
 
@@ -494,7 +521,9 @@ class ordenes extends conexion {
                 return $_respuestas->error_400();
             }else{                
                 $this->ordenID = $datos['ordenID'];
-                $this->sesionID = $datos['sesionID'];
+                if(isset($datos["sesionID"])) {
+                    $this->sesionID = $datos['sesionID'];
+                }
                 $resp = $this->eliminarOrden();                
                 if($resp){
                     $this->quitarAvisoOrdenNueva();
